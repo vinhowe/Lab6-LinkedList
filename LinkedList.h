@@ -1,4 +1,6 @@
 #pragma once
+#include <sstream>
+#include <stdexcept>
 #include <string>
 
 #include "LinkedListInterface.h"
@@ -9,13 +11,12 @@ template <typename T>
 class LinkedList : public LinkedListInterface<T> {
  public:
   LinkedList() = default;
-  virtual ~LinkedList() = default;
-  ;
+  virtual ~LinkedList() { clear(); };
 
   struct Node {
     explicit Node(T data) : data(data){};
     T data;
-    Node* next;
+    Node* next = nullptr;
   };
 
   /*
@@ -26,6 +27,10 @@ class LinkedList : public LinkedListInterface<T> {
   Do not allow duplicate values in the list.
   */
   void insertHead(T value) override {
+    if (find(value)) {
+      return;
+    }
+
     Node* newNode = new Node(value);
     // TODO: Check for duplicates
     if (!head) {
@@ -45,12 +50,17 @@ class LinkedList : public LinkedListInterface<T> {
   Do not allow duplicate values in the list.
   */
   void insertTail(T value) override {
-    Node* newNode = new Node(value);
-    // TODO: Check for duplicates
-    if (!head) {
-      head = newNode;
+    if (find(value)) {
       return;
     }
+
+    if (!head) {
+      insertHead(value);
+      return;
+    }
+
+    Node* newNode = new Node(value);
+    // TODO: Check for duplicates
 
     Node* ptr = head;
     while (ptr->next != nullptr) {
@@ -69,11 +79,12 @@ class LinkedList : public LinkedListInterface<T> {
   insertionNode is in the list. Do not allow duplicate values in the list.
   */
   void insertAfter(T value, T insertionNode) override {
-    Node* newNode = new Node(value);
-    // TODO: Check for duplicates
-    if (!head) {
+    if (!head || find(value)) {
+      // Either there are no nodes or a node already exists with the value we
+      // want
       return;
     }
+
 
     Node* ptr = head;
     while (ptr->data != insertionNode) {
@@ -82,6 +93,9 @@ class LinkedList : public LinkedListInterface<T> {
         return;
       }
     }
+
+    Node* newNode = new Node(value);
+
     newNode->next = ptr->next;
     ptr->next = newNode;
   }
@@ -94,21 +108,29 @@ class LinkedList : public LinkedListInterface<T> {
   The list may or may not include a node with the given value.
   */
   void remove(T value) override {
-    if (!head) {
+    if (!head || !find(value)) {
       return;
     }
 
     if (head->data == value) {
+      Node* tempHead = head;
       head = head->next;
+      delete tempHead;
+      return;
     }
-    // TODO: ((((((((((((((((((((((((((((((((THIS DOESN'T WORK
+
     Node* ptr = head;
-    do {
-      ptr = ptr->next;
-      if (ptr == nullptr) {
-        return;
+    while (ptr->next != nullptr) {
+      if (ptr->next->data == value) {
+        break;
       }
-    } while(ptr->next->data != value);
+      ptr = ptr->next;
+    }
+
+    Node* removePtr = ptr->next;
+    ptr->next = removePtr->next;
+
+    delete removePtr;
   }
 
   /*
@@ -116,7 +138,11 @@ class LinkedList : public LinkedListInterface<T> {
 
   Remove all nodes from the list.
   */
-  void clear() override {}
+  void clear() override {
+    while (head != nullptr) {
+      remove(head->data);
+    }
+  }
 
   /*
   at
@@ -127,7 +153,18 @@ class LinkedList : public LinkedListInterface<T> {
   If the given index is out of range of the list, throw an out of range
   exception.
   */
-  T at(int index) override {}
+  T at(int index) override {
+    int i = 0;
+    Node* ptr = head;
+    while (ptr != nullptr) {
+      if (i == index) {
+        return ptr->data;
+      }
+      ptr = ptr->next;
+      i++;
+    }
+    throw out_of_range(to_string(index) + " is out of range");
+  }
 
   /*
   size
@@ -135,18 +172,13 @@ class LinkedList : public LinkedListInterface<T> {
   Returns the number of nodes in the list.
   */
   int size() override {
-    if (!head) {
-      return 0;
-    }
     int size = 0;
     Node* ptr = head;
     while (ptr != nullptr) {
       size++;
-      if (ptr->next == nullptr) {
-        return size;
-      }
       ptr = ptr->next;
     }
+    return size;
   }
 
   /*
@@ -177,4 +209,14 @@ class LinkedList : public LinkedListInterface<T> {
 
  private:
   Node* head;
+  bool find(T value) {
+    Node* ptr = head;
+    while (ptr != nullptr) {
+      if (ptr->data == value) {
+        return true;
+      }
+      ptr = ptr->next;
+    }
+    return false;
+  }
 };
