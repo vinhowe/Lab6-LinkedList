@@ -32,7 +32,6 @@ class LinkedList : public LinkedListInterface<T> {
     }
 
     Node* newNode = new Node(value);
-    // TODO: Check for duplicates
     if (!head) {
       head = newNode;
       return;
@@ -60,7 +59,6 @@ class LinkedList : public LinkedListInterface<T> {
     }
 
     Node* newNode = new Node(value);
-    // TODO: Check for duplicates
 
     Node* ptr = head;
     while (ptr->next != nullptr) {
